@@ -1,0 +1,8 @@
+anthropic
+gradio
+inspect-ai
+numpy
+pypdf
+pyyaml
+rank-bm25
+sentence-transformers
