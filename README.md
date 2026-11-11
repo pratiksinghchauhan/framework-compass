@@ -50,6 +50,18 @@ The OWASP PDFs must be downloaded by hand from a browser and saved in `data/raw/
 - [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/resource/owasp-top-10-for-llm-applications-2025/) → `data/raw/owasp-llm-top10-2025.pdf`
 - [OWASP Agentic AI – Threats and Mitigations](https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/) → `data/raw/owasp-agentic-threats.pdf`
 
+## Chunking
+
+```bash
+python -m ingest.chunk
+```
+
+Chunks follow each document's structure: one per NIST AI RMF subcategory, NIST GenAI Profile suggested action, OWASP entry subsection and ATLAS object. Prose sections are packed to about 400 tokens with up to 50 tokens of sentence overlap, and no chunk exceeds the embedding model's 512-token limit. Every chunk starts with a header naming its document and section, and records its pages and any framework identifiers it mentions.
+
+For comparison, `python -m ingest.chunk --strategy generic` builds the usual tutorial baseline: fixed 400-token windows with 50 tokens of overlap over the raw extracted text, with no cleanup, sections or headers.
+
+Each strategy writes `data/processed/<strategy>/chunks.jsonl`, with size statistics in `chunk_stats.json` next to it.
+
 ## Setup
 
 ```bash
