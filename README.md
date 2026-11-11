@@ -23,8 +23,8 @@ The source documents are not stored in this repository. See [Getting the documen
 ## How it works
 
 1. **Ingest:** extract text from each document with section and page metadata, then split it into chunks along headings.
-2. **Retrieve:** hybrid search that combines BM25 (good for exact identifiers like `LLM01` or `MAP 1.1`) with embeddings (`nomic-ai/nomic-embed-text-v1.5`, run locally).
-3. **Answer:** Claude answers from the retrieved passages only, with citations to the source text.
+2. **Retrieve:** hybrid search that combines BM25 (good for exact identifiers like `LLM01` or `MAP 1.1`), embeddings (`nomic-ai/nomic-embed-text-v1.5`, run locally) and exact identifier lookup.
+3. **Answer:** an LLM (Gemini by default, swappable) answers from the retrieved passages only, with citations to the source text.
 4. **Evaluate:** an [Inspect](https://inspect.aisi.org.uk/) evaluation with single-document, multi-document and unanswerable questions.
 
 ## Project layout
@@ -76,8 +76,21 @@ Embeds every chunk with `nomic-ai/nomic-embed-text-v1.5`, using the `search_docu
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export ANTHROPIC_API_KEY=...   # never commit this
+cp .env.example .env       # then set GEMINI_API_KEY (from Google AI Studio)
 ```
+
+`.env` is gitignored. Exporting the variables in your shell works too, and takes priority over `.env`.
+
+## Asking questions
+
+```bash
+python -m app.answer "Which GenAI Profile actions address confabulation?"
+python -m app.answer "What is AML.T0051?" --retrieve-only   # passages only, no API key needed
+```
+
+Retrieval fuses three rankings with reciprocal rank fusion: BM25, embeddings, and exact identifier lookup (if the question names `AML.T0051` or `GOVERN 1.1`, the chunk for that ID ranks first). Use `--mode bm25`, `--mode dense` or `--no-id-lookup` to test the parts on their own, and `--strategy generic` to search the baseline chunks.
+
+The model is set by environment variables: `LLM_PROVIDER` (default `gemini`) and `LLM_MODEL` (default `gemini-3.5-flash-lite`). The key is read from the provider's variable, `GEMINI_API_KEY` for Gemini. Providers live in `app/llm.py`. Any OpenAI-compatible endpoint is one new entry there.
 
 ## Status
 

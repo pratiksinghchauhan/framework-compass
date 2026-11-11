@@ -1,8 +1,9 @@
-anthropic
 gradio
 inspect-ai
 numpy
+openai
 pypdf
+python-dotenv
 pyyaml
 rank-bm25
 sentence-transformers
