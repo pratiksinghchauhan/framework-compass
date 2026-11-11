@@ -92,9 +92,17 @@ Retrieval fuses three rankings with reciprocal rank fusion: BM25, embeddings, an
 
 The model is set by environment variables: `LLM_PROVIDER` (default `gemini`) and `LLM_MODEL` (default `gemini-3.5-flash-lite`). The key is read from the provider's variable, `GEMINI_API_KEY` for Gemini. Providers live in `app/llm.py`. Any OpenAI-compatible endpoint is one new entry there.
 
+## Web UI
+
+```bash
+python -m app.ui            # then open http://127.0.0.1:7860
+```
+
+A Gradio page with the same switches as the CLI (chunks, retrieval mode, ID lookup, k, retrieve only). Under the answer it lists the cited sources, and a "Retrieved passages" panel shows every passage the model saw, with its BM25 and dense ranks, whether it was cited, and its full text. If the model call fails (for example, no API key), the passages are still shown. Use `--host 0.0.0.0` to serve on the network, or `--share` for a temporary public Gradio link.
+
 ## Status
 
-Early development. Ingestion, retrieval, the UI and the evaluation report are still to come.
+Early development. Ingestion, retrieval, answering and the UI work. The evaluation report is still to come.
 
 ## Credits
 
