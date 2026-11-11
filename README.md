@@ -24,7 +24,7 @@ The source documents are not stored in this repository. See [Getting the documen
 
 1. **Ingest:** extract text from each document with section and page metadata, then split it into chunks along headings.
 2. **Retrieve:** hybrid search that combines BM25 (good for exact identifiers like `LLM01` or `MAP 1.1`), embeddings (`nomic-ai/nomic-embed-text-v1.5`, run locally) and exact identifier lookup.
-3. **Answer:** an LLM (Gemini by default, swappable) answers from the retrieved passages only, with citations to the source text.
+3. **Answer:** Gemini answers from the retrieved passages only, with citations to the source text.
 4. **Evaluate:** an [Inspect](https://inspect.aisi.org.uk/) evaluation with single-document, multi-document and unanswerable questions.
 
 ## Project layout
@@ -90,7 +90,7 @@ python -m app.answer "What is AML.T0051?" --retrieve-only   # passages only, no 
 
 Retrieval fuses three rankings with reciprocal rank fusion: BM25, embeddings, and exact identifier lookup (if the question names `AML.T0051` or `GOVERN 1.1`, the chunk for that ID ranks first). Use `--mode bm25`, `--mode dense` or `--no-id-lookup` to test the parts on their own, and `--strategy generic` to search the baseline chunks.
 
-The model is set by environment variables: `LLM_PROVIDER` (default `gemini`) and `LLM_MODEL` (default `gemini-3.5-flash-lite`). The key is read from the provider's variable, `GEMINI_API_KEY` for Gemini. Providers live in `app/llm.py`. Any OpenAI-compatible endpoint is one new entry there.
+Answers come from Gemini, through its OpenAI-compatible API. The key is read from `GEMINI_API_KEY`, and `LLM_MODEL` picks the Gemini model (default `gemini-3.5-flash-lite`). The model call sits behind one small interface in `app/llm.py`.
 
 ## Web UI
 
