@@ -34,7 +34,10 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
 OUT_DIR = ROOT / "data" / "processed"
 
-TOKENIZER = "BAAI/bge-small-en-v1.5"
+EMBEDDING_MODEL = "nomic-ai/nomic-embed-text-v1.5"
+# The model expects these task prefixes on the text it embeds.
+DOCUMENT_PREFIX = "search_document: "
+QUERY_PREFIX = "search_query: "
 
 ID_PATTERNS = [
     r"\bAML\.(?:TA|T|M|CS|E|S)\d{4}(?:\.\d{3})?\b",
@@ -356,9 +359,10 @@ class Packer:
         self.tokens, self.target, self.max_tokens, self.overlap = tokens, target, max_tokens, overlap
 
     def budget(self, header: str) -> int:
-        # [CLS] + header + "\n" + body + [SEP], with a small margin because
-        # token counts of joined text can differ slightly from the sum of parts.
-        return self.max_tokens - self.tokens.count(header + "\n") - 2 - 8
+        # [CLS] + document prefix + header + "\n" + body + [SEP], with a small
+        # margin because token counts of joined text can differ slightly from
+        # the sum of parts.
+        return self.max_tokens - self.tokens.count(DOCUMENT_PREFIX + header + "\n") - 2 - 8
 
     def segments(self, paras: list[Para], limit: int, budget: int) -> list[Seg]:
         segs = []
@@ -573,7 +577,7 @@ def stats(chunks: list[Chunk], args, warnings: dict, missing: list[str]) -> dict
         }
 
     return {
-        "config": {"strategy": args.strategy, "tokenizer": TOKENIZER, "target": args.target,
+        "config": {"strategy": args.strategy, "tokenizer": EMBEDDING_MODEL, "target": args.target,
                    "max_tokens": args.max_tokens, "overlap": args.overlap},
         "total": summary(chunks) if chunks else {},
         "docs": {
@@ -591,7 +595,7 @@ def main() -> None:
                         help="structured (default) or the generic fixed-window baseline")
     parser.add_argument("--target", type=int, default=400,
                         help="target tokens for prose chunks; window size for generic")
-    parser.add_argument("--max-tokens", type=int, default=512, help="hard limit per chunk (embedding model limit)")
+    parser.add_argument("--max-tokens", type=int, default=512, help="hard limit per chunk, counted with the embedding model's tokenizer")
     parser.add_argument("--overlap", type=int, default=50,
                         help="max overlap tokens between prose chunks; exact overlap for generic")
     parser.add_argument("--out", type=Path, help="output folder (default data/processed/<strategy>)")
@@ -599,7 +603,7 @@ def main() -> None:
     args.out = args.out or OUT_DIR / args.strategy
     make_chunks = STRATEGIES[args.strategy]
 
-    packer = Packer(Tokens(TOKENIZER), args.target, args.max_tokens, args.overlap)
+    packer = Packer(Tokens(EMBEDDING_MODEL), args.target, args.max_tokens, args.overlap)
     chunks, warnings, missing = [], {}, []
     for doc, config in DOCS.items():
         if not (RAW_DIR / config["file"]).exists():

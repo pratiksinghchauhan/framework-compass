@@ -23,7 +23,7 @@ The source documents are not stored in this repository. See [Getting the documen
 ## How it works
 
 1. **Ingest:** extract text from each document with section and page metadata, then split it into chunks along headings.
-2. **Retrieve:** hybrid search that combines BM25 (good for exact identifiers like `LLM01` or `MAP 1.1`) with embeddings (`BAAI/bge-small-en-v1.5`, run locally).
+2. **Retrieve:** hybrid search that combines BM25 (good for exact identifiers like `LLM01` or `MAP 1.1`) with embeddings (`nomic-ai/nomic-embed-text-v1.5`, run locally).
 3. **Answer:** Claude answers from the retrieved passages only, with citations to the source text.
 4. **Evaluate:** an [Inspect](https://inspect.aisi.org.uk/) evaluation with single-document, multi-document and unanswerable questions.
 
@@ -56,7 +56,7 @@ The OWASP PDFs must be downloaded by hand from a browser and saved in `data/raw/
 python -m ingest.chunk
 ```
 
-Chunks follow each document's structure: one per NIST AI RMF subcategory, NIST GenAI Profile suggested action, OWASP entry subsection and ATLAS object. Prose sections are packed to about 400 tokens with up to 50 tokens of sentence overlap, and no chunk exceeds the embedding model's 512-token limit. Every chunk starts with a header naming its document and section, and records its pages and any framework identifiers it mentions.
+Chunks follow each document's structure: one per NIST AI RMF subcategory, NIST GenAI Profile suggested action, OWASP entry subsection and ATLAS object. Prose sections are packed to about 400 tokens with up to 50 tokens of sentence overlap, and no chunk exceeds 512 tokens, counted with the embedding model's tokenizer. Every chunk starts with a header naming its document and section, and records its pages and any framework identifiers it mentions.
 
 For comparison, `python -m ingest.chunk --strategy generic` builds the usual tutorial baseline: fixed 400-token windows with 50 tokens of overlap over the raw extracted text, with no cleanup, sections or headers.
 
