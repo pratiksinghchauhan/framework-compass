@@ -62,6 +62,14 @@ For comparison, `python -m ingest.chunk --strategy generic` builds the usual tut
 
 Each strategy writes `data/processed/<strategy>/chunks.jsonl`, with size statistics in `chunk_stats.json` next to it.
 
+## Embeddings
+
+```bash
+python -m ingest.embed
+```
+
+Embeds every chunk with `nomic-ai/nomic-embed-text-v1.5`, using the `search_document: ` prefix the model expects. Each strategy gets `embeddings.npy` (one normalised 768-dimensional float32 row per chunk, in the same order as `chunks.jsonl`) and `embeddings.json` (model, chunk ids and a hash of the chunk file). A strategy is skipped if its embeddings already match its chunks. On a 2-core CPU, embedding both strategies takes about 40 minutes.
+
 ## Setup
 
 ```bash
