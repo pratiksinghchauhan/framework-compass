@@ -1,0 +1,63 @@
+# Dimensions for writing evaluation questions.
+# Every question gets one feature, one scenario and one persona.
+# The number of gold sources (one or several) is recorded per question,
+# not used as a dimension.
+
+features:
+  F1:
+    name: ID lookup
+    description: The user asks about a specific framework identifier.
+    examples: ["What is AML.T0051?", "What does GV-1.1-001 say?", "What is LLM04?"]
+  F2:
+    name: Explain a concept
+    description: The user asks what a framework says about a topic.
+    examples: ["How does the AI RMF define a trustworthy AI system?"]
+  F3:
+    name: Map across frameworks
+    description: The user asks how two or more frameworks relate on a topic.
+    examples: ["Which ATLAS techniques relate to OWASP LLM01?"]
+  F4:
+    name: List items
+    description: The user asks for a complete set of items.
+    examples: ["Which ATLAS mitigations apply to AML.T0051?", "List the threats in the OWASP agentic threat model."]
+
+scenarios:
+  S1:
+    name: Clear question
+    description: The user knows what they want and asks precisely.
+    check: Correct answer that cites the gold source.
+  S2:
+    name: Broad or vague question
+    description: The user is exploring and asks loosely.
+    check: Useful answer from the relevant sections, no padding from unrelated ones.
+  S3:
+    name: Wrong premise
+    description: The user misremembers an ID, mixes up names, or asks about something that does not exist.
+    examples: ["What does LLM04 say about prompt injection?", "What is AML.T9999?"]
+    check: Corrects the premise or says it is not there; does not play along or invent content.
+  S4:
+    name: Partly in scope
+    description: Part of the question is covered by the five documents, part is not.
+    examples: ["What does LLM01 recommend, and how does the EU AI Act regulate it?"]
+    check: Answers the covered part and states which part is not covered.
+  S5:
+    name: Out of scope
+    description: An adjacent topic the user assumes is covered.
+    examples: ["What does ISO 42001 require?"]
+    check: Replies with exactly the not-covered string.
+
+personas:
+  P1:
+    name: Security engineer or red-teamer
+    wording: Uses identifiers and technical terms.
+  P2:
+    name: Compliance or GRC lead
+    wording: Uses framework language such as control, requirement, govern, document.
+  P3:
+    name: Newcomer or product manager
+    wording: Uses everyday words that do not appear in the documents.
+
+coverage:
+  - Each feature, scenario and persona appears at least 3 times in the dev set.
+  - Each of the five documents is a gold source at least 5 times.
+  - Questions are written from the source documents, before running the app on them.
