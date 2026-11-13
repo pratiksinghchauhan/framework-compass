@@ -1,0 +1,16 @@
+Hypothesis
+Public benchmarks are a start. Your own test set is what decides whether you ship.
+
+Meaning
+Testing the app on publicly available QA datasets is a quick first check.
+Only a test set built from this app's own five documents shows whether it is good enough to ship.
+
+How it is tested
+- Run the same app variants (chunking, retrieval mode, Gemini model) on a public dataset and on our own test set.
+- Compare the rankings and the ship decision from each.
+- Record which failures only our own set catches.
+- Report retrieval and answer quality separately; the result may differ between them.
+- Write the ship criteria before the first run.
+
+It can fail
+If the public dataset gives the same rankings and the same ship decision, the hypothesis is wrong for this app, and that result is reported as is.

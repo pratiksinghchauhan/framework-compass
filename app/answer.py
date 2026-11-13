@@ -44,7 +44,7 @@ def source_label(chunk: dict) -> str:
     name = DOCS.get(chunk["doc"], {}).get("name", chunk["doc"])
     parts = [name]
     path = chunk.get("section_path") or []
-    if chunk.get("chunk_type") in ("category", "subcategory", "action") and chunk.get("ids"):
+    if chunk.get("chunk_type") in ("category", "subcategory", "action", "threat") and chunk.get("ids"):
         parts.append(chunk["ids"][0])
     elif path:
         section = path[-1]

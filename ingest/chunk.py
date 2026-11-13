@@ -1,8 +1,9 @@
 """Split the source documents into retrieval chunks.
 
 Chunks follow each document's own structure: one chunk per NIST subcategory
-or suggested action, per OWASP entry subsection, per ATLAS object. Only prose
-sections are packed into token-limited chunks, with a small sentence overlap.
+or suggested action, per OWASP entry subsection or agentic threat, per ATLAS
+object. Only prose sections are packed into token-limited chunks, with a small
+sentence overlap.
 Every chunk starts with a header naming its document and section path.
 
 The "generic" strategy is a baseline for comparison: fixed token windows over
@@ -50,7 +51,7 @@ ID_PATTERNS = [
 # they exceed the token limit; prose is packed to the target size instead.
 ATOMIC = {
     "category", "subcategory", "action", "footnote", "tactic", "technique", "mitigation",
-    "mitigation-use", "case-study", "entity", "software",
+    "mitigation-use", "case-study", "entity", "software", "threat",
 }
 
 GAI_RISKS = [
@@ -299,6 +300,48 @@ def units_gai_actions(section: Section) -> list[Unit]:
     return units
 
 
+THREAT_ROW = re.compile(r"^(T\d{1,2}) \S")
+
+
+def units_agentic(section: Section) -> list[Unit]:
+    """OWASP Agentic AI threat table: one unit per threat row (T1, T2, ...)."""
+    section.path = [AGENTIC_TITLES.get(t, t).lstrip("🔹 ").rstrip(":") for t in section.path]
+    while section.lines and section.lines[0].text in ("Architecture", "Navigator"):
+        section.lines = section.lines[1:]  # second line of a two-line heading
+    if not section.path or section.path[-1] != "Detailed Threat Model":
+        return units_default(section)
+    prose, rows = [], []  # row: (threat id, lines)
+    for line in section.lines:
+        if line.text.startswith("TID Threat Name"):
+            continue
+        if m := THREAT_ROW.match(line.text):
+            rows.append((m[1], [line]))
+        elif rows:
+            rows[-1][1].append(line)
+        else:
+            prose.append(line)
+    units = [Unit("prose", section.path, paragraphs(prose))] if prose else []
+    for ident, lines in rows:
+        units.append(Unit("threat", section.path, [Para(join_lines([l.text for l in lines]),
+                                                        lines[0].page, lines[-1].page)], ident))
+    return units
+
+
+AGENTIC_TITLES = {
+    "Agentic AI Reference": "Agentic AI Reference Architecture",
+    "Agentic Threats Taxonomy": "Agentic Threats Taxonomy Navigator",
+}
+
+AGENTIC_THREATS = [
+    "Intent Breaking and Goal Manipulation", "Misaligned and Deceptive Behaviors",
+    "Repudiation and Untraceability", "Memory Poisoning", "Cascading Hallucination Attacks",
+    "Tool Misuse", "Privilege Compromise", "Resource Overload", "Unexpected RCE and Code Attacks",
+    "Insecure Inter-Agent Protocol Abuse", "Supply Chain Attacks", "Identity Spoofing and Impersonation",
+    "Overwhelming Human-in-the-Loop", "Human Manipulation", "Agent Communication Poisoning",
+    "Human Attacks on Multi-Agent Systems", "Rogue Agents in Multi-Agent Systems",
+]
+
+
 def units_default(section: Section) -> list[Unit]:
     return [Unit("prose", section.path, paragraphs(section.lines))]
 
@@ -324,8 +367,9 @@ DOCS = {
         "title": "OWASP Top 10 for LLM Applications 2025",
         "skip": [r"^Reference Links$"],
         "headings": [
-            (0, r"LLM\d{2}(?::\d{4})?\s+\S.*"),
-            (1, r"Description|Common Examples of (?:Vulnerability|Risk)|Prevention and Mitigation "
+            (0, r"LLM\d{2}(?::\d{4})?:?\s+\S.*|Letter from the Project Leads|What.s New in the 2025 Top 10|"
+                r"Moving Forward|Appendix \d+: .+"),
+            (1, r"Description|Common Examples of (?:Vulnerability|Risks?)|Prevention and Mitigation "
                 r"Strategies|Example Attack Scenarios|Related Frameworks and Taxonomies|Reference Links"),
         ],
     },
@@ -334,6 +378,19 @@ DOCS = {
         "name": "OWASP Agentic AI Threats and Mitigations",
         "title": "OWASP Agentic AI: Threats and Mitigations",
         "ids": [r"\bT\d{1,2}\b"],
+        "units": units_agentic,
+        "skip": [r"^Acknowledgements$", r"^OWASP Top 10 for LLM Project$", r"^Project Supporters$"],
+        "headings": [
+            (0, r"Introduction|AI Agents|Agentic AI Reference|Agentic AI Threat Model|Agentic Threats Taxonomy|"
+                r"Mitigation Strategies|Example Threat Models|Acknowledgements|OWASP Top 10 for LLM Project|"
+                r"Project Supporters"),
+            (1, r"Scope and Audience|Core Capabilities|Agents and LLM Applications|AI Landscape|"
+                r"Single Agent Architecture|Multi-agent Architecture|Agentic AI Patterns|Threat modeling approach|"
+                r"Reference Threat Model|Detailed Threat Model:|Agentic Threat Decision Path|"
+                r"Playbook and Threat Mapping Overview|🔹 ?Playbook \d+: .+|Enterprise Co-Pilots|"
+                r"Agentic IoT in Smart Home Security Cameras|Agent-driven RPA .+|" + "|".join(AGENTIC_THREATS)),
+            (2, r"T\d{1,2} ?[-:] .+"),
+        ],
     },
     "mitre-atlas": {
         "file": "mitre-atlas.yaml",

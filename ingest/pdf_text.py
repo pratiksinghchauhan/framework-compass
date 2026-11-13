@@ -46,24 +46,30 @@ def _page_labels(reader: PdfReader) -> list[str]:
     return labels
 
 
+def _running_key(line: str) -> str:
+    return re.sub(r"^\d+|\d+$", "#", line)
+
+
 def _strip_running_text(pages: list[list[str]]) -> list[list[str]]:
     """Drop page numbers and running headers/footers.
 
     A line counts as running text when it sits in the top or bottom two lines
     of a page and the same line appears there on at least a quarter of pages.
+    A page number at the start or end of the line is ignored when comparing,
+    so "Page 12" and "12example.org" footers count as the same line on every page.
     """
     edges = Counter()
     for lines in pages:
-        edges.update(set(lines[:2] + lines[-2:]))
+        edges.update({_running_key(line) for line in lines[:2] + lines[-2:]})
     limit = max(3, len(pages) // 4)
-    repeated = {line for line, count in edges.items() if count >= limit}
+    repeated = {key for key, count in edges.items() if count >= limit}
 
     cleaned = []
     for lines in pages:
         keep = []
         for i, line in enumerate(lines):
             at_edge = i < 2 or i >= len(lines) - 2
-            if at_edge and (line in repeated or PAGE_NUMBER.match(line)):
+            if at_edge and (_running_key(line) in repeated or PAGE_NUMBER.match(line)):
                 continue
             keep.append(line)
         cleaned.append(keep)
@@ -204,11 +210,16 @@ def sections_from_outline(reader, lines, skip, warnings) -> list[Section]:
     return _build(lines, headings, skip, warnings)
 
 
+TOC_LEADER = re.compile(r"(?:\s?\.){4,}\s*\d*\s*$")
+
+
 def sections_from_patterns(lines, patterns, skip, warnings) -> list[Section]:
     """Fallback for PDFs without an outline: headings are whole lines matching a regex."""
     compiled = [(depth, re.compile(rf"^(?:{p})\s*$")) for depth, p in patterns]
     headings = []
     for i, line in enumerate(lines):
+        if TOC_LEADER.search(line.text):  # table-of-contents entry, not a heading
+            continue
         for depth, pattern in compiled:
             if pattern.match(line.text):
                 headings.append((depth, line.text, i, 1))
