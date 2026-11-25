@@ -48,7 +48,8 @@ def source_label(chunk: dict) -> str:
         parts.append(chunk["ids"][0])
     elif path:
         section = path[-1]
-        if len(path) > 1 and (section in ("Procedure", "Footnotes") or section.startswith("Applied to")):
+        if len(path) > 1 and (section in ("Procedure", "Footnotes") or section.startswith("Applied to")
+                              or chunk["doc"] == "owasp-llm-top10-2025"):
             section = f"{path[-2]} › {section}"
         parts.append(section if len(section) <= 90 else section[:87].rstrip() + "...")
     start, end = chunk.get("page_start"), chunk.get("page_end")
